@@ -1,12 +1,14 @@
 import torch
 from typing import Dict
+from .base import Encoder
+from .bert import BERTEncoder
 
 from transformers import RobertaModel, AutoTokenizer, AutoConfig
 
-from lens.lens.encoders.base import BaseEncoder
+#from lens.lens.encoders.base import BaseEncoder
 
 
-class RobertaEncoder(BaseEncoder):
+class RobertaEncoder(BERTEncoder):
     """Encodes sentences using a RoBERTa model."""
 
     def __init__(self, model_name: str):
