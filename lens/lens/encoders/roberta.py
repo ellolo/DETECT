@@ -20,7 +20,16 @@ class RoBERTaEncoder(BERTEncoder):
         )
         self.model.encoder.output_hidden_states = True
         self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
-        
+    
+    @classmethod
+    def from_pretrained(cls, pretrained_model: str, load_pretrained_weights: bool = True) -> Encoder:
+        """Function that loads a pretrained encoder from Hugging Face.
+        :param pretrained_model: Name of the pretrain model to be loaded.
+
+        :return: Encoder model
+        """
+        return RoBERTaEncoder(pretrained_model)
+  
 
     """
     def __init__(self, model_name: str):
@@ -33,7 +42,7 @@ class RoBERTaEncoder(BERTEncoder):
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self._device = None
     """
-    
+
     def forward(
         self, input_ids: torch.Tensor, attention_mask: torch.Tensor, **kwargs
     ) -> Dict[str, torch.Tensor]:
