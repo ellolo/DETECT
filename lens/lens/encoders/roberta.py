@@ -54,12 +54,16 @@ class RoBERTaEncoder(BERTEncoder):
         #    return_dict=True # Always return dictionary for explicit access
         #)
         
-        last_hidden_states, _, all_layers = self.model(
+        outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             output_hidden_states=True, # Explicitly request hidden states
             return_dict=True # Always return dictionary for explicit access
         )
+
+        print(type(outputs), len(outputs))
+
+        last_hidden_states, _, all_layers = outputs
 
         # Access outputs by name
         # last_hidden_state = model_output.last_hidden_state # Not used directly in this snippet
