@@ -1,62 +1,51 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) 2020 Unbabel
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-r"""
-RoBERTa Encoder
-==============
-    Pretrained RoBERTa  encoder from Hugging Face.
-"""
+import torch
 from typing import Dict
 
-import torch
-from .base import Encoder
-from .bert import BERTEncoder
-from transformers import AutoModel, AutoTokenizer
+from transformers import RobertaModel, AutoTokenizer, AutoConfig
+
+from lens.lens.encoders.base import BaseEncoder
 
 
-class RoBERTaEncoder(BERTEncoder):
-    """RoBERTA Encoder encoder.
+class RobertaEncoder(BaseEncoder):
+    """Encodes sentences using a RoBERTa model."""
 
-    :param pretrained_model: Pretrained model from hugging face.
-    """
-
-    def __init__(self, pretrained_model: str, load_pretrained_weights: bool = True) -> None:
-        super(Encoder, self).__init__()
-        self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
-        self.model = AutoModel.from_pretrained(
-            pretrained_model, add_pooling_layer=False
-        )
-        self.model.encoder.output_hidden_states = True
-
-    @classmethod
-    def from_pretrained(cls, pretrained_model: str, load_pretrained_weights: bool = True) -> Encoder:
-        """Function that loads a pretrained encoder from Hugging Face.
-        :param pretrained_model: Name of the pretrain model to be loaded.
-
-        :return: Encoder model
-        """
-        return RoBERTaEncoder(pretrained_model)
+    def __init__(self, model_name: str):
+        super().__init__()
+        # Load configuration and explicitly ensure output_hidden_states is True
+        # This is the most robust way to ensure the model returns all expected outputs.
+        config = AutoConfig.from_pretrained(model_name)
+        config.output_hidden_states = True # Ensure this is set in the config
+        self.model = RobertaModel.from_pretrained(model_name, config=config)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self._device = None
 
     def forward(
         self, input_ids: torch.Tensor, attention_mask: torch.Tensor, **kwargs
     ) -> Dict[str, torch.Tensor]:
+        # Explicitly request output_hidden_states=True and return_dict=True for robustness
+        #model_output = self.model(
+        #    input_ids=input_ids,
+        #    attention_mask=attention_mask,
+        #    output_hidden_states=True, # Explicitly request hidden states
+        #    return_dict=True # Always return dictionary for explicit access
+        #)
+        
         last_hidden_states, _, all_layers = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            output_hidden_states=True,
-            return_dict=False,
+            output_hidden_states=True, # Explicitly request hidden states
+            return_dict=True # Always return dictionary for explicit access
         )
+
+        # Access outputs by name
+        # last_hidden_state = model_output.last_hidden_state # Not used directly in this snippet
+        # pooler_output = model_output.pooler_output # Not used directly in this snippet
+        #all_layers = model_output.hidden_states # This is a tuple of all layer outputs
+
+        # Use the mean of the last layer's hidden states as the sentence embedding.
+        #sentence_embedding = all_layers[-1].mean(dim=1)
+
+        #return {"sentence_embedding": sentence_embedding}
         return {
             "sentemb": last_hidden_states[:, 0, :],
             "wordemb": last_hidden_states,
