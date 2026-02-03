@@ -3,14 +3,26 @@ from typing import Dict
 from .base import Encoder
 from .bert import BERTEncoder
 
-from transformers import RobertaModel, AutoTokenizer, AutoConfig
+from transformers import RobertaModel, AutoTokenizer, AutoConfig, AutoModel
 
 #from lens.lens.encoders.base import BaseEncoder
 
 
-class RobertaEncoder(BERTEncoder):
+class RoBERTaEncoder(BERTEncoder):
     """Encodes sentences using a RoBERTa model."""
 
+    def __init__(self, pretrained_model: str, load_pretrained_weights: bool = True) -> None:
+        super(Encoder, self).__init__()
+        config = AutoConfig.from_pretrained(pretrained_model)
+        config.output_hidden_states = True # Ensure this is set in the config
+        self.model = AutoModel.from_pretrained(
+            pretrained_model, add_pooling_layer=False
+        )
+        self.model.encoder.output_hidden_states = True
+        self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
+        
+
+    """
     def __init__(self, model_name: str):
         super().__init__()
         # Load configuration and explicitly ensure output_hidden_states is True
@@ -20,7 +32,8 @@ class RobertaEncoder(BERTEncoder):
         self.model = RobertaModel.from_pretrained(model_name, config=config)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self._device = None
-
+    """
+    
     def forward(
         self, input_ids: torch.Tensor, attention_mask: torch.Tensor, **kwargs
     ) -> Dict[str, torch.Tensor]:
